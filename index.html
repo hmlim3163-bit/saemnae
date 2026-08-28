@@ -242,10 +242,10 @@ function renderSummary(txs){
     el.innerHTML=`
       <div class="card"><div class="label">최근 실거래</div>
         <div class="big">${latest?fmt(latest.price):"—"} ${latest?deltaHtml(latest.delta,"delta"):""}</div>
-        <div class="small">${latest?`${latest.date} · ${latest.floor}층`:""}</div></div>
+        <div class="small">${latest?`${latest.date} · ${latest.bldg?latest.bldg+"동 ":""}${latest.floor}층`:""}</div></div>
       <div class="card"><div class="label">역대 최고가 (전용 ${curArea??"—"}㎡)</div>
         <div class="big">${peak?fmt(peak.price):"—"}</div>
-        <div class="small">${peak?`${peak.date} · ${peak.floor}층`:""}</div></div>`;
+        <div class="small">${peak?`${peak.date} · ${peak.bldg?peak.bldg+"동 ":""}${peak.floor}층`:""}</div></div>`;
   }else if(curTrade==="jeonse"){
     // 같은 단지·평형의 최근 매매가와 비교해 전세가율·갭 계산
     const sale=[...DATA.sales].reverse().find(t=>t.apt===curApt&&areaKey(t.area)===curArea);
@@ -275,13 +275,13 @@ function today(){const d=new Date();return `${d.getFullYear()}-${String(d.getMon
 
 function renderTable(txs){
   const heads={
-    sale:"<tr><th>계약일</th><th>전용</th><th>층</th><th style='text-align:right'>거래가</th><th style='text-align:right'>변동</th></tr>",
+    sale:"<tr><th>계약일</th><th>전용</th><th>동·층</th><th style='text-align:right'>거래가</th><th style='text-align:right'>변동</th></tr>",
     jeonse:"<tr><th>계약일</th><th>전용</th><th>층</th><th style='text-align:right'>보증금</th></tr>",
     wolse:"<tr><th>계약일</th><th>전용</th><th>층</th><th style='text-align:right'>보증금</th><th style='text-align:right'>월세</th></tr>"};
   document.getElementById("thead").innerHTML=heads[curTrade];
   const recent=[...txs].reverse().slice(0,30);
   document.getElementById("rows").innerHTML=recent.map(t=>{
-    const head=`<td>${t.date}</td><td>${t.area}㎡</td><td>${t.floor}층</td>`;
+    const head=`<td>${t.date}</td><td>${t.area}㎡</td><td>${t.bldg?t.bldg+"동 ":""}${t.floor}층</td>`;
     if(curTrade==="sale")
       return `<tr>${head}<td class="price">${fmt(t.price)}${t.isHigh?'<span class="hi">신고가</span>':""}</td>
         <td class="chg">${deltaHtml(t.delta,"")||"—"}</td></tr>`;
@@ -307,7 +307,7 @@ function drawMainChart(txs){
       plugins:{legend:{display:false},tooltip:{callbacks:{
         label:c=>{const t=c.raw.d;
           const v=curTrade==="wolse"?`보증금 ${fmt(t.deposit)} / 월 ${fmt(t.rent)}`:fmt(val(t));
-          return `${t.date} · ${t.floor}층 · ${v}${t.isHigh?" · 신고가":""}`;}}}},
+          return `${t.date} · ${t.bldg?t.bldg+"동 ":""}${t.floor}층 · ${v}${t.isHigh?" · 신고가":""}`;}}}},
       scales:{
         x:{type:"linear",grid:{color:"#F5EEDD"},
           ticks:{stepSize:1,color:"#8B7A58",font:{size:11},callback:v=>Number.isInteger(v)?v:""}},
