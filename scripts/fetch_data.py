@@ -45,6 +45,19 @@ def month_range(start_ym: str):
             y, m = y + 1, 1
 
 
+def http_get(url: str) -> str:
+    """재시도(4회, 점증 대기) 포함 GET. 해외망에서 간헐 타임아웃 대응."""
+    last = None
+    for attempt in range(4):
+        try:
+            with urllib.request.urlopen(url, timeout=20) as res:
+                return res.read().decode("utf-8")
+        except Exception as e:
+            last = e
+            time.sleep(3 * (attempt + 1))
+    raise last
+
+
 def fetch_month(service_key: str, ymd: str, url: str = API_URL):
     """한 달치 항목(dict 리스트) 반환. 페이지네이션 처리."""
     items, page = [], 1
@@ -56,9 +69,7 @@ def fetch_month(service_key: str, ymd: str, url: str = API_URL):
             "pageNo": str(page),
             "numOfRows": "1000",
         }
-        full = url + "?" + urllib.parse.urlencode(params)
-        with urllib.request.urlopen(full, timeout=30) as res:
-            body = res.read().decode("utf-8")
+        body = http_get(url + "?" + urllib.parse.urlencode(params))
         root = ET.fromstring(body)
         code = root.findtext(".//resultCode", "")
         if code not in ("00", "000"):
@@ -124,9 +135,19 @@ def main():
     seen_names = set()
     sales, rents = [], []
     rent_ok = True
+    fail_streak = 0
     for ymd in month_range(START_YM):
         # 매매
-        for raw in fetch_month(service_key, ymd, API_URL):
+        try:
+            month_items = fetch_month(service_key, ymd, API_URL)
+            fail_streak = 0
+        except Exception as e:
+            fail_streak += 1
+            print(f"[경고] {ymd} 매매 수집 실패, 건너뜀: {e}", file=sys.stderr)
+            if fail_streak >= 3 and not sales:
+                sys.exit("연속 3개월 접속 실패 — API 서버 접속 불가로 중단합니다.")
+            continue
+        for raw in month_items:
             dong = get(raw, "umdNm", "법정동")
             apt = get(raw, "aptNm", "아파트")
             if dong in DONGS:
