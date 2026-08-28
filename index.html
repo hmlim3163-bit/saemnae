@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>샘내마을 실거래가 — 수원 장안구</title>
+<meta name="description" content="수원 장안구 샘내마을 5개 아파트 단지(한일신안·삼호진덕·현대·신명스카이뷰·수원일성)의 국토교통부 매매·전세·월세 실거래가를 한눈에.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#FFFBF1; --card:#FFFFFF; --ink:#3B2F1B; --sub:#8B7A58;
+  --accent:#D98E0B; --accent-soft:#FBF0D6; --line:#EFE3C9;
+  --up:#C7402F; --down:#2E6FDB; --serif:'Noto Serif KR',serif;
+  --sans:'Pretendard',-apple-system,'Apple SD Gothic Neo',sans-serif;
+  --grid:#F5EEDD;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px 64px}
+
+header{padding:36px 0 20px}
+.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--accent);font-weight:600}
+h1{font-family:var(--serif);font-size:30px;font-weight:700;margin-top:6px}
+.meta{margin-top:6px;font-size:13px;color:var(--sub);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.badge{background:#FBEFCE;color:#8A6A12;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;display:none}
+
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 0 10px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--sub);
+  font-size:14px;font-weight:600;padding:8px 14px;border-radius:99px;cursor:pointer;font-family:var(--sans)}
+.tab.on{background:var(--ink);border-color:var(--ink);color:#fff}
+
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;background:var(--card);overflow:hidden;margin-bottom:10px}
+.seg button{border:none;background:none;color:var(--sub);font-family:var(--sans);font-size:13.5px;font-weight:600;
+  padding:7px 18px;cursor:pointer}
+.seg button.on{background:var(--accent);color:#fff}
+.seg button+button{border-left:1px solid var(--line)}
+
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 16px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--sub);font-size:12.5px;font-weight:600;
+  padding:5px 10px;border-radius:8px;cursor:pointer;font-family:var(--sans)}
+.chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card .label{font-size:12px;color:var(--sub);font-weight:600}
+.card .big{font-family:var(--serif);font-size:23px;font-weight:700;margin-top:4px;letter-spacing:-.01em}
+.card .small{font-size:12px;color:var(--sub);margin-top:2px}
+.delta{font-size:13px;font-weight:700;font-family:var(--sans)}
+.delta.u{color:var(--up)}.delta.d{color:var(--down)}.delta.f{color:var(--sub)}
+
+.chart-card{padding:16px 10px 8px;margin-bottom:12px}
+.chart-title{font-size:12px;color:var(--sub);font-weight:600;padding:0 6px 6px}
+#chart{width:100%;height:250px}
+#volChart{width:100%;height:110px}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{font-size:11.5px;color:var(--sub);font-weight:600;text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}
+td{padding:9px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.price{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+td.chg{font-size:12px;font-weight:700;text-align:right}
+td.chg.u{color:var(--up)}td.chg.d{color:var(--down)}td.chg.f{color:var(--sub)}
+tr:last-child td{border-bottom:none}
+.hi{display:inline-block;background:var(--up);color:#fff;font-size:10px;font-weight:700;
+  border-radius:4px;padding:1px 5px;margin-left:5px;vertical-align:1px}
+.empty{padding:32px 8px;text-align:center;color:var(--sub);font-size:14px}
+
+footer{margin-top:28px;font-size:12px;color:var(--sub)}
+footer p{margin-top:4px}
+
+/* 우측 고정 전화연결 버튼 */
+.call-fab{position:fixed;right:14px;bottom:18px;z-index:99;display:flex;align-items:center;gap:9px;
+  text-decoration:none;background:var(--card);border:1px solid var(--line);border-radius:99px;
+  padding:6px 14px 6px 6px;box-shadow:0 4px 16px rgba(18,52,59,.16)}
+.call-fab .face{width:44px;height:44px;border-radius:50%;object-fit:cover;display:block;
+  border:2px solid var(--accent);background:var(--accent-soft)}
+.call-fab .txt{line-height:1.25}
+.call-fab .txt b{display:block;font-size:12.5px;color:var(--ink)}
+.call-fab .txt span{font-size:11.5px;color:var(--accent);font-weight:700}
+.call-fab .ring{position:absolute;left:2px;top:2px;width:52px;height:52px;border-radius:50%;
+  border:2px solid var(--accent);opacity:0;animation:pulse 2.4s ease-out infinite;pointer-events:none}
+@keyframes pulse{0%{transform:scale(.9);opacity:.55}70%{transform:scale(1.25);opacity:0}100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.call-fab .ring{animation:none}}
+@media(max-width:420px){.call-fab .txt b{font-size:12px}}
+
+@media(max-width:420px){h1{font-size:26px}.card .big{font-size:20px}.seg button{padding:7px 13px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">모닝부동산 · 수원 장안구 · 국토교통부 실거래가</div>
+    <h1>샘내마을 실거래가</h1>
+    <div class="meta"><span id="updated"></span><span class="badge" id="sampleBadge">샘플 데이터 — API 연동 전 미리보기</span></div>
+  </header>
+
+  <nav class="tabs" id="tabs" aria-label="단지 선택"></nav>
+  <div class="seg" id="seg" role="tablist" aria-label="거래 유형"></div>
+  <div class="chips" id="chips" aria-label="평형 선택"></div>
+
+  <section class="summary" id="summary"></section>
+
+  <section class="card chart-card">
+    <div class="chart-title" id="chartTitle"></div>
+    <canvas id="chart"></canvas>
+  </section>
+  <section class="card chart-card">
+    <div class="chart-title">월별 거래량</div>
+    <canvas id="volChart"></canvas>
+  </section>
+
+  <section class="card" style="padding:6px 8px">
+    <table>
+      <thead id="thead"></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="empty" id="empty" style="display:none">선택한 조건의 거래가 없습니다.</div>
+  </section>
+
+  <footer>
+    <p id="bizLine"></p>
+    <p>출처: 국토교통부 아파트 매매·전월세 실거래가 공개 데이터 (해제된 거래 제외)</p>
+    <p>신고가 = 해당 평형의 역대 최고가 경신 거래 · 변동 = 같은 평형 직전 거래 대비</p>
+    <p>본 사이트는 정보 제공 목적이며, 실제 거래 판단의 책임은 이용자에게 있습니다.</p>
+  </footer>
+</div>
+
+<a class="call-fab" id="callFab" aria-label="전화 상담 연결">
+  <span class="ring"></span>
+  <img class="face" id="fabFace" alt="상담 대표">
+  <span class="txt"><b id="fabName"></b><span id="fabPhone"></span></span>
+</a>
+
+<script>
+const APTS=["한일신안","삼호진덕","현대","신명스카이뷰","수원일성"];
+const TRADES=[["sale","매매"],["jeonse","전세"],["wolse","월세"]];
+
+// ===== 사무소 설정 (여기만 수정하면 됩니다) =====
+const BIZ={
+  name:"모닝부동산",
+  phone:"031-271-2771",
+  photo:"agent.jpg",
+  info:"모닝부동산공인중개사사무소 · 대표 서보경 · 경기도 수원시 장안구 하률로30번길 22 (천천동, 신안한일) 상가동 110호 · 사업자번호 652-45-00549 · 전화 031-271-2771"
+};
+// ================================================
+
+let DATA=null, curApt=APTS[0], curTrade="sale", curArea=null, chart=null, volChart=null;
+
+// ---------- 샘플 데이터 (data/data.json 로드 실패 시 미리보기용) ----------
+function sampleData(){
+  let s=7; const rnd=()=>{s=(s*16807)%2147483647; return s/2147483647;};
+  const cfg={"한일신안":[[49.9,17000],[59.8,21000]],"삼호진덕":[[59.9,22000],[84.9,29000]],
+    "현대":[[59.7,21500],[84.8,28500]],"신명스카이뷰":[[59.9,26000],[84.9,34000]],"수원일성":[[49.5,16500],[59.9,20500]]};
+  const sales=[],rents=[];
+  for(const [apt,areas] of Object.entries(cfg))
+    for(const [area,base] of areas)
+      for(let m=0;m<68;m++){
+        const y=2021+Math.floor(m/12), mo=m%12+1;
+        const dt=()=>`${y}-${String(mo).padStart(2,"0")}-${String(1+Math.floor(rnd()*27)).padStart(2,"0")}`;
+        const trend=1+0.28*Math.sin(m/22)+m*0.004;
+        if(rnd()>0.55) sales.push({apt,area,floor:1+Math.floor(rnd()*15),date:dt(),
+          price:Math.round(base*trend*(0.95+rnd()*0.1)/100)*100});
+        if(rnd()>0.5){
+          const wolse=rnd()<0.35;
+          const dep=Math.round(base*0.62*trend*(0.95+rnd()*0.1)/100)*100;
+          rents.push({apt,area,floor:1+Math.floor(rnd()*15),date:dt(),
+            deposit:wolse?Math.round(dep*0.15/100)*100:dep,
+            rent:wolse?Math.round((40+rnd()*50)/5)*5:0});
+        }
+      }
+  const bd=(a,b)=>a.date<b.date?-1:1;
+  return {updated:"미연동",sample:true,sales:sales.sort(bd),rents:rents.sort(bd)};
+}
+
+// ---------- 유틸 ----------
+const fmt=p=>{const eok=Math.floor(p/10000),man=p%10000;
+  return eok?`${eok}억${man?" "+man.toLocaleString():""}`:`${man.toLocaleString()}만`;};
+const areaKey=a=>Math.round(a);
+const dateNum=d=>{const[y,m,dd]=d.split("-").map(Number);return y+(m-1)/12+dd/372;};
+const ymOf=d=>d.slice(0,7);
+
+// 매매 목록에 직전 거래 대비 변동(delta)·신고가(isHigh) 표시를 붙인다.
+// list는 같은 단지·평형, 날짜 오름차순이어야 한다.
+function enrich(list){
+  let max=-Infinity, prev=null;
+  return list.map(t=>{
+    const e={...t, delta:prev===null?null:t.price-prev, isHigh:t.price>max};
+    if(t.price>max) max=t.price;
+    prev=t.price;
+    return e;
+  });
+}
+function deltaHtml(d,cls){
+  if(d===null) return "";
+  if(d===0) return `<span class="${cls} f">보합</span>`;
+  const up=d>0;
+  return `<span class="${cls} ${up?"u":"d"}">${up?"▲":"▼"} ${fmt(Math.abs(d))}</span>`;
+}
+// 월별 건수 집계
+function monthlyCounts(list){
+  const map=new Map();
+  for(const t of list) map.set(ymOf(t.date),(map.get(ymOf(t.date))||0)+1);
+  return [...map.entries()].sort((a,b)=>a[0]<b[0]?-1:1);
+}
+
+// ---------- 데이터 선택 ----------
+function currentList(){
+  if(curTrade==="sale") return DATA.sales.filter(t=>t.apt===curApt);
+  const r=DATA.rents.filter(t=>t.apt===curApt);
+  return curTrade==="jeonse"?r.filter(t=>t.rent===0):r.filter(t=>t.rent>0);
+}
+
+// ---------- 렌더 ----------
+function render(){
+  const all=currentList();
+  const areas=[...new Set(all.map(t=>areaKey(t.area)))].sort((a,b)=>a-b);
+  if(curArea===null||!areas.includes(curArea)) curArea=areas[0]??null;
+  document.getElementById("chips").innerHTML=areas.map(a=>
+    `<button class="chip${a===curArea?" on":""}" data-a="${a}">전용 ${a}㎡</button>`).join("");
+  document.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{curArea=+c.dataset.a;render();});
+
+  let txs=all.filter(t=>areaKey(t.area)===curArea);
+  if(curTrade==="sale") txs=enrich(txs);
+  renderSummary(txs);
+  renderTable(txs);
+  drawMainChart(txs);
+  drawVolChart(txs);
+}
+
+function renderSummary(txs){
+  const el=document.getElementById("summary");
+  const latest=txs[txs.length-1];
+  if(curTrade==="sale"){
+    const peak=txs.reduce((m,t)=>!m||t.price>m.price?t:m,null);
+    el.innerHTML=`
+      <div class="card"><div class="label">최근 실거래</div>
+        <div class="big">${latest?fmt(latest.price):"—"} ${latest?deltaHtml(latest.delta,"delta"):""}</div>
+        <div class="small">${latest?`${latest.date} · ${latest.floor}층`:""}</div></div>
+      <div class="card"><div class="label">역대 최고가 (전용 ${curArea??"—"}㎡)</div>
+        <div class="big">${peak?fmt(peak.price):"—"}</div>
+        <div class="small">${peak?`${peak.date} · ${peak.floor}층`:""}</div></div>`;
+  }else if(curTrade==="jeonse"){
+    // 같은 단지·평형의 최근 매매가와 비교해 전세가율·갭 계산
+    const sale=[...DATA.sales].reverse().find(t=>t.apt===curApt&&areaKey(t.area)===curArea);
+    let ratio="—",gap="—";
+    if(latest&&sale){
+      ratio=(latest.deposit/sale.price*100).toFixed(1)+"%";
+      gap=fmt(sale.price-latest.deposit);
+    }
+    el.innerHTML=`
+      <div class="card"><div class="label">최근 전세 보증금</div>
+        <div class="big">${latest?fmt(latest.deposit):"—"}</div>
+        <div class="small">${latest?`${latest.date} · ${latest.floor}층`:""}</div></div>
+      <div class="card"><div class="label">전세가율 · 갭</div>
+        <div class="big">${ratio}</div>
+        <div class="small">매매가와 차이(갭) ${gap}</div></div>`;
+  }else{
+    el.innerHTML=`
+      <div class="card"><div class="label">최근 월세</div>
+        <div class="big">${latest?fmt(latest.rent):"—"}</div>
+        <div class="small">${latest?`보증금 ${fmt(latest.deposit)} · ${latest.date}`:""}</div></div>
+      <div class="card"><div class="label">최근 1년 거래</div>
+        <div class="big">${txs.filter(t=>dateNum(t.date)>dateNum(today())-1).length}건</div>
+        <div class="small">전용 ${curArea??"—"}㎡ 기준</div></div>`;
+  }
+}
+function today(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
+
+function renderTable(txs){
+  const heads={
+    sale:"<tr><th>계약일</th><th>전용</th><th>층</th><th style='text-align:right'>거래가</th><th style='text-align:right'>변동</th></tr>",
+    jeonse:"<tr><th>계약일</th><th>전용</th><th>층</th><th style='text-align:right'>보증금</th></tr>",
+    wolse:"<tr><th>계약일</th><th>전용</th><th>층</th><th style='text-align:right'>보증금</th><th style='text-align:right'>월세</th></tr>"};
+  document.getElementById("thead").innerHTML=heads[curTrade];
+  const recent=[...txs].reverse().slice(0,30);
+  document.getElementById("rows").innerHTML=recent.map(t=>{
+    const head=`<td>${t.date}</td><td>${t.area}㎡</td><td>${t.floor}층</td>`;
+    if(curTrade==="sale")
+      return `<tr>${head}<td class="price">${fmt(t.price)}${t.isHigh?'<span class="hi">신고가</span>':""}</td>
+        <td class="chg">${deltaHtml(t.delta,"")||"—"}</td></tr>`;
+    if(curTrade==="jeonse")
+      return `<tr>${head}<td class="price">${fmt(t.deposit)}</td></tr>`;
+    return `<tr>${head}<td class="price">${fmt(t.deposit)}</td><td class="price">${fmt(t.rent)}</td></tr>`;
+  }).join("");
+  document.getElementById("empty").style.display=recent.length?"none":"block";
+}
+
+function drawMainChart(txs){
+  const val=t=>curTrade==="sale"?t.price:curTrade==="jeonse"?t.deposit:t.rent;
+  const unit=curTrade==="wolse"?1:10000;
+  document.getElementById("chartTitle").textContent=
+    curTrade==="sale"?"매매 가격 추이":curTrade==="jeonse"?"전세 보증금 추이":"월세 추이";
+  const pts=txs.map(t=>({x:dateNum(t.date),y:val(t)/unit,d:t}));
+  if(chart) chart.destroy();
+  chart=new Chart(document.getElementById("chart"),{
+    type:"scatter",
+    data:{datasets:[{data:pts,pointRadius:3.5,pointHoverRadius:5,
+      pointBackgroundColor:pts.map(p=>p.d.isHigh?"rgba(199,64,47,.85)":"rgba(217,142,11,.7)"),pointBorderWidth:0}]},
+    options:{maintainAspectRatio:false,animation:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        label:c=>{const t=c.raw.d;
+          const v=curTrade==="wolse"?`보증금 ${fmt(t.deposit)} / 월 ${fmt(t.rent)}`:fmt(val(t));
+          return `${t.date} · ${t.floor}층 · ${v}${t.isHigh?" · 신고가":""}`;}}}},
+      scales:{
+        x:{type:"linear",grid:{color:"#F5EEDD"},
+          ticks:{stepSize:1,color:"#8B7A58",font:{size:11},callback:v=>Number.isInteger(v)?v:""}},
+        y:{grid:{color:"#F5EEDD"},
+          ticks:{color:"#8B7A58",font:{size:11},callback:v=>curTrade==="wolse"?v+"만":v+"억"}}}}});
+}
+
+function drawVolChart(txs){
+  const mc=monthlyCounts(txs);
+  if(volChart) volChart.destroy();
+  volChart=new Chart(document.getElementById("volChart"),{
+    type:"bar",
+    data:{labels:mc.map(m=>m[0]),datasets:[{data:mc.map(m=>m[1]),
+      backgroundColor:"rgba(217,142,11,.45)",borderRadius:2}]},
+    options:{maintainAspectRatio:false,animation:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:"#8B7A58",font:{size:10},maxTicksLimit:8,
+          callback:function(v){const l=this.getLabelForValue(v);return l.endsWith("-01")?l.slice(0,4):"";}}},
+        y:{grid:{color:"#F5EEDD"},ticks:{color:"#8B7A58",font:{size:10},stepSize:1,precision:0}}}}});
+}
+
+// ---------- 네비게이션 ----------
+function renderNav(){
+  document.getElementById("tabs").innerHTML=APTS.map(a=>
+    `<button class="tab${a===curApt?" on":""}" data-apt="${a}">${a}</button>`).join("");
+  document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+    curApt=t.dataset.apt;curArea=null;renderNav();render();});
+  document.getElementById("seg").innerHTML=TRADES.map(([k,l])=>
+    `<button class="${k===curTrade?"on":""}" data-t="${k}" role="tab">${l}</button>`).join("");
+  document.querySelectorAll("#seg button").forEach(b=>b.onclick=()=>{
+    curTrade=b.dataset.t;curArea=null;renderNav();render();});
+}
+
+// ---------- 시작 ----------
+function initBiz(){
+  const fab=document.getElementById("callFab");
+  fab.href="tel:"+BIZ.phone.replace(/-/g,"");
+  document.getElementById("fabName").textContent=BIZ.name+" 전화상담";
+  document.getElementById("fabPhone").textContent=BIZ.phone;
+  const img=document.getElementById("fabFace");
+  img.src=BIZ.photo;
+  img.onerror=()=>{ // 사진 미등록 시 전화 아이콘으로 대체
+    img.outerHTML='<span class="face" style="display:flex;align-items:center;justify-content:center;font-size:20px">📞</span>';
+  };
+  if(BIZ.info) document.getElementById("bizLine").textContent=BIZ.info;
+}
+
+(async()=>{
+  initBiz();
+  try{
+    const res=await fetch("data/data.json",{cache:"no-store"});
+    if(!res.ok) throw 0;
+    DATA=await res.json();
+    if(!DATA.sales?.length) throw 0;
+    DATA.rents=DATA.rents||[];
+  }catch(e){ DATA=sampleData(); }
+  document.getElementById("updated").textContent=DATA.sample?"":"업데이트 "+DATA.updated;
+  document.getElementById("sampleBadge").style.display=DATA.sample?"inline-block":"none";
+  renderNav();render();
+})();
+</script>
+</body>
+</html>
