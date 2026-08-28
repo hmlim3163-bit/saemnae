@@ -48,9 +48,13 @@ def month_range(start_ym: str):
 def http_get(url: str) -> str:
     """재시도(4회, 점증 대기) 포함 GET. 해외망에서 간헐 타임아웃 대응."""
     last = None
+    req = urllib.request.Request(url, headers={
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+        "Accept": "application/xml,*/*",
+    })
     for attempt in range(4):
         try:
-            with urllib.request.urlopen(url, timeout=20) as res:
+            with urllib.request.urlopen(req, timeout=20) as res:
                 return res.read().decode("utf-8")
         except Exception as e:
             last = e
