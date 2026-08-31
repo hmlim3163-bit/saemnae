@@ -27,6 +27,12 @@ h1{font-family:var(--serif);font-size:30px;font-weight:700;margin-top:6px}
 .meta{margin-top:6px;font-size:13px;color:var(--sub);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .naver-link{display:inline-block;background:#03C75A;color:#fff;font-size:12px;font-weight:700;
   padding:5px 12px;border-radius:99px;text-decoration:none}
+.kb-link{display:inline-block;background:#fff;color:#8a6d1d;border:1.5px solid #E7DCC3;font-size:12px;font-weight:700;
+  padding:4px 11px;border-radius:99px;text-decoration:none}
+.pre{font-size:10px;color:#B9A98C;border:1px solid #E7DCC3;border-radius:4px;padding:0 4px;margin-left:5px}
+.ct{font-size:11px;padding:1px 8px;border-radius:99px;font-weight:700}
+.ct.nw{background:#E8F1FF;color:#2563EB}
+.ct.rn{background:#F0EDE5;color:#8B7A58}
 .badge{background:#FBEFCE;color:#8A6A12;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;display:none}
 
 .tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 0 10px;scrollbar-width:none}
@@ -96,7 +102,7 @@ footer p{margin-top:4px}
   <header>
     <div class="eyebrow">모닝부동산 · 수원 장안구 · 국토교통부 실거래가</div>
     <h1>샘내마을 실거래가</h1>
-    <div class="meta"><a class="naver-link" id="naverLink" target="_blank" rel="noopener">현재 매물 보기 · 네이버 ↗</a><span id="updated"></span><span class="badge" id="sampleBadge">샘플 데이터 — API 연동 전 미리보기</span></div>
+    <div class="meta"><a class="naver-link" id="naverLink" target="_blank" rel="noopener">현재 매물 보기 · 네이버 ↗</a><a class="kb-link" id="kbLink" target="_blank" rel="noopener">KB시세 ↗</a><span id="updated"></span><span class="badge" id="sampleBadge">샘플 데이터 — API 연동 전 미리보기</span></div>
   </header>
 
   <nav class="tabs" id="tabs" aria-label="단지 선택"></nav>
@@ -272,22 +278,25 @@ function renderSummary(txs){
   }
 }
 function today(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
+function setKb(){document.getElementById("kbLink").href="https://www.google.com/search?q="+encodeURIComponent("KB시세 수원 천천동 "+curApt+" 아파트");}
 
 function renderTable(txs){
   const heads={
     sale:"<tr><th>계약일</th><th>전용</th><th>동·층</th><th style='text-align:right'>거래가</th><th style='text-align:right'>변동</th></tr>",
-    jeonse:"<tr><th>계약일</th><th>전용</th><th>층</th><th style='text-align:right'>보증금</th></tr>",
-    wolse:"<tr><th>계약일</th><th>전용</th><th>층</th><th style='text-align:right'>보증금</th><th style='text-align:right'>월세</th></tr>"};
+    jeonse:"<tr><th>계약일</th><th>전용</th><th>층</th><th>구분</th><th style='text-align:right'>보증금</th></tr>",
+    wolse:"<tr><th>계약일</th><th>전용</th><th>층</th><th>구분</th><th style='text-align:right'>보증금</th><th style='text-align:right'>월세</th></tr>"};
   document.getElementById("thead").innerHTML=heads[curTrade];
   const recent=[...txs].reverse().slice(0,30);
   document.getElementById("rows").innerHTML=recent.map(t=>{
-    const head=`<td>${t.date}</td><td>${t.area}㎡</td><td>${t.bldg?t.bldg+"동 ":""}${t.floor}층</td>`;
+    const preBadge=(curTrade==="sale"&&!t.bldg&&dateNum(t.date)>dateNum(today())-0.5)?'<span class="pre">등기전</span>':"";
+    const head=`<td>${t.date}</td><td>${t.area}㎡</td><td>${t.bldg?t.bldg+"동 ":""}${t.floor}층${preBadge}</td>`;
+    const ctCell=`<td>${t.ctype?`<span class="ct ${t.ctype.includes("갱신")?"rn":"nw"}">${t.ctype}</span>`:"—"}</td>`;
     if(curTrade==="sale")
       return `<tr>${head}<td class="price">${fmt(t.price)}${t.isHigh?'<span class="hi">신고가</span>':""}</td>
         <td class="chg">${deltaHtml(t.delta,"")||"—"}</td></tr>`;
     if(curTrade==="jeonse")
-      return `<tr>${head}<td class="price">${fmt(t.deposit)}</td></tr>`;
-    return `<tr>${head}<td class="price">${fmt(t.deposit)}</td><td class="price">${fmt(t.rent)}</td></tr>`;
+      return `<tr>${head}${ctCell}<td class="price">${fmt(t.deposit)}</td></tr>`;
+    return `<tr>${head}${ctCell}<td class="price">${fmt(t.deposit)}</td><td class="price">${fmt(t.rent)}</td></tr>`;
   }).join("");
   document.getElementById("empty").style.display=recent.length?"none":"block";
 }
@@ -307,7 +316,7 @@ function drawMainChart(txs){
       plugins:{legend:{display:false},tooltip:{callbacks:{
         label:c=>{const t=c.raw.d;
           const v=curTrade==="wolse"?`보증금 ${fmt(t.deposit)} / 월 ${fmt(t.rent)}`:fmt(val(t));
-          return `${t.date} · ${t.bldg?t.bldg+"동 ":""}${t.floor}층 · ${v}${t.isHigh?" · 신고가":""}`;}}}},
+          return `${t.date} · ${t.bldg?t.bldg+"동 ":""}${t.floor}층${t.rgst?" · 등기 "+t.rgst:""}${t.ctype?" · "+t.ctype:""} · ${v}${t.isHigh?" · 신고가":""}`;}}}},
       scales:{
         x:{type:"linear",grid:{color:"#F5EEDD"},
           ticks:{stepSize:1,color:"#8B7A58",font:{size:11},callback:v=>Number.isInteger(v)?v:""}},
@@ -335,7 +344,7 @@ function renderNav(){
   document.getElementById("tabs").innerHTML=APTS.map(a=>
     `<button class="tab${a===curApt?" on":""}" data-apt="${a}">${a}</button>`).join("");
   document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
-    curApt=t.dataset.apt;curArea=null;renderNav();render();});
+    curApt=t.dataset.apt;curArea=null;setKb();renderNav();render();});
   document.getElementById("seg").innerHTML=TRADES.map(([k,l])=>
     `<button class="${k===curTrade?"on":""}" data-t="${k}" role="tab">${l}</button>`).join("");
   document.querySelectorAll("#seg button").forEach(b=>b.onclick=()=>{
@@ -355,6 +364,7 @@ function initBiz(){
   };
   if(BIZ.info) document.getElementById("bizLine").textContent=BIZ.info;
   if(BIZ.naver) document.getElementById("naverLink").href=BIZ.naver;
+  setKb();
 }
 
 (async()=>{
