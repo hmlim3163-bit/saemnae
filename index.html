@@ -33,6 +33,9 @@ h1{font-family:var(--serif);font-size:30px;font-weight:700;margin-top:6px}
 .ct{font-size:11px;padding:1px 8px;border-radius:99px;font-weight:700}
 .ct.nw{background:#E8F1FF;color:#2563EB}
 .ct.rn{background:#F0EDE5;color:#8B7A58}
+.more{display:block;width:100%;margin-top:10px;padding:10px;border:1.5px dashed var(--line);border-radius:10px;
+  background:none;color:var(--sub);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer}
+.more:hover{border-color:var(--accent);color:var(--accent)}
 .badge{background:#FBEFCE;color:#8A6A12;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;display:none}
 
 .tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 0 10px;scrollbar-width:none}
@@ -126,6 +129,7 @@ footer p{margin-top:4px}
       <tbody id="rows"></tbody>
     </table>
     <div class="empty" id="empty" style="display:none">선택한 조건의 거래가 없습니다.</div>
+    <button class="more" id="moreBtn" style="display:none"></button>
   </section>
 
   <footer>
@@ -157,7 +161,7 @@ const BIZ={
 };
 // ================================================
 
-let DATA=null, curApt=APTS[0], curTrade="sale", curArea=null, chart=null, volChart=null;
+let DATA=null, curApt=APTS[0], curTrade="sale", curArea=null, chart=null, volChart=null, showAll=false;
 
 // ---------- 샘플 데이터 (data/data.json 로드 실패 시 미리보기용) ----------
 function sampleData(){
@@ -188,7 +192,13 @@ function sampleData(){
 // ---------- 유틸 ----------
 const fmt=p=>{const eok=Math.floor(p/10000),man=p%10000;
   return eok?`${eok}억${man?" "+man.toLocaleString():""}`:`${man.toLocaleString()}만`;};
-const areaKey=a=>Math.round(a);
+const areaKey=a=>Number(a).toFixed(2);
+// 타입별 공급면적(㎡) — 네이버부동산 기준. 미확인 타입은 전용만 표시됨.
+const SUPPLY={
+  "한일신안":{"101.83":"130.93"},
+  "수원일성":{"84.72":"106.59","84.85":"106.75"}
+};
+const areaLabel=k=>{const s=(SUPPLY[curApt]||{})[k];return s?`${s}㎡ (전용 ${k})`:`전용 ${k}㎡`;};
 const dateNum=d=>{const[y,m,dd]=d.split("-").map(Number);return y+(m-1)/12+dd/372;};
 const ymOf=d=>d.slice(0,7);
 
@@ -226,11 +236,11 @@ function currentList(){
 // ---------- 렌더 ----------
 function render(){
   const all=currentList();
-  const areas=[...new Set(all.map(t=>areaKey(t.area)))].sort((a,b)=>a-b);
+  const areas=[...new Set(all.map(t=>areaKey(t.area)))].sort((a,b)=>Number(a)-Number(b));
   if(curArea===null||!areas.includes(curArea)) curArea=areas[0]??null;
   document.getElementById("chips").innerHTML=areas.map(a=>
-    `<button class="chip${a===curArea?" on":""}" data-a="${a}">전용 ${a}㎡</button>`).join("");
-  document.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{curArea=+c.dataset.a;render();});
+    `<button class="chip${a===curArea?" on":""}" data-a="${a}">${areaLabel(a)}</button>`).join("");
+  document.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{curArea=c.dataset.a;render();});
 
   let txs=all.filter(t=>areaKey(t.area)===curArea);
   if(curTrade==="sale") txs=enrich(txs);
@@ -249,7 +259,7 @@ function renderSummary(txs){
       <div class="card"><div class="label">최근 실거래</div>
         <div class="big">${latest?fmt(latest.price):"—"} ${latest?deltaHtml(latest.delta,"delta"):""}</div>
         <div class="small">${latest?`${latest.date} · ${latest.bldg?latest.bldg+"동 ":""}${latest.floor}층`:""}</div></div>
-      <div class="card"><div class="label">역대 최고가 (전용 ${curArea??"—"}㎡)</div>
+      <div class="card"><div class="label">역대 최고가 · ${curArea?areaLabel(curArea):"—"}</div>
         <div class="big">${peak?fmt(peak.price):"—"}</div>
         <div class="small">${peak?`${peak.date} · ${peak.bldg?peak.bldg+"동 ":""}${peak.floor}층`:""}</div></div>`;
   }else if(curTrade==="jeonse"){
@@ -274,7 +284,7 @@ function renderSummary(txs){
         <div class="small">${latest?`보증금 ${fmt(latest.deposit)} · ${latest.date}`:""}</div></div>
       <div class="card"><div class="label">최근 1년 거래</div>
         <div class="big">${txs.filter(t=>dateNum(t.date)>dateNum(today())-1).length}건</div>
-        <div class="small">전용 ${curArea??"—"}㎡ 기준</div></div>`;
+        <div class="small">${curArea?areaLabel(curArea):"—"} 기준</div></div>`;
   }
 }
 function today(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
@@ -286,7 +296,8 @@ function renderTable(txs){
     jeonse:"<tr><th>계약일</th><th>전용</th><th>층</th><th>구분</th><th style='text-align:right'>보증금</th></tr>",
     wolse:"<tr><th>계약일</th><th>전용</th><th>층</th><th>구분</th><th style='text-align:right'>보증금</th><th style='text-align:right'>월세</th></tr>"};
   document.getElementById("thead").innerHTML=heads[curTrade];
-  const recent=[...txs].reverse().slice(0,30);
+  const all=[...txs].reverse();
+  const recent=showAll?all:all.slice(0,30);
   document.getElementById("rows").innerHTML=recent.map(t=>{
     const preBadge=(curTrade==="sale"&&!t.bldg&&dateNum(t.date)>dateNum(today())-0.5)?'<span class="pre">등기전</span>':"";
     const head=`<td>${t.date}</td><td>${t.area}㎡</td><td>${t.bldg?t.bldg+"동 ":""}${t.floor}층${preBadge}</td>`;
@@ -299,6 +310,9 @@ function renderTable(txs){
     return `<tr>${head}${ctCell}<td class="price">${fmt(t.deposit)}</td><td class="price">${fmt(t.rent)}</td></tr>`;
   }).join("");
   document.getElementById("empty").style.display=recent.length?"none":"block";
+  const mb=document.getElementById("moreBtn");
+  if(all.length>30){ mb.style.display="block"; mb.textContent=showAll?"최근 30건만 보기 ▲":`전체 ${all.length}건 모두 보기 ▼`; mb.onclick=()=>{showAll=!showAll;renderTable(txs);}; }
+  else mb.style.display="none";
 }
 
 function drawMainChart(txs){
@@ -344,11 +358,11 @@ function renderNav(){
   document.getElementById("tabs").innerHTML=APTS.map(a=>
     `<button class="tab${a===curApt?" on":""}" data-apt="${a}">${a}</button>`).join("");
   document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
-    curApt=t.dataset.apt;curArea=null;setKb();renderNav();render();});
+    curApt=t.dataset.apt;curArea=null;showAll=false;setKb();renderNav();render();});
   document.getElementById("seg").innerHTML=TRADES.map(([k,l])=>
     `<button class="${k===curTrade?"on":""}" data-t="${k}" role="tab">${l}</button>`).join("");
   document.querySelectorAll("#seg button").forEach(b=>b.onclick=()=>{
-    curTrade=b.dataset.t;curArea=null;renderNav();render();});
+    curTrade=b.dataset.t;curArea=null;showAll=false;renderNav();render();});
 }
 
 // ---------- 시작 ----------
