@@ -201,7 +201,8 @@ const SUPPLY={
   "신명스카이뷰":{"59.99":"89.36","59.88":"89.36"},
   "수원일성":{"84.72":"106.59","84.85":"106.75"}
 };
-const areaLabel=k=>{const s=(SUPPLY[curApt]||{})[k];return s?`${s}㎡ (전용 ${k})`:`전용 ${k}㎡`;};
+const TYPE={"삼호진덕":{"59.88":"A","59.73":"B"},"수원일성":{"84.72":"A","84.85":"B"}};
+const areaLabel=k=>{const s=(SUPPLY[curApt]||{})[k];const ty=(TYPE[curApt]||{})[k]||"";return s?`${s}${ty}㎡ (전용 ${k}${ty})`:`전용 ${k}㎡`;};
 const dateNum=d=>{const[y,m,dd]=d.split("-").map(Number);return y+(m-1)/12+dd/372;};
 const ymOf=d=>d.slice(0,7);
 
