@@ -101,14 +101,38 @@ footer p{margin-top:4px}
 @media(prefers-reduced-motion:reduce){.call-fab .ring{animation:none}}
 @media(max-width:420px){.call-fab .txt b{font-size:12px}}
 
-@media(max-width:420px){h1{font-size:26px}.card .big{font-size:20px}.seg button{padding:7px 13px}}
+.head-row{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.head-row h1{margin:0}
+.call-box{display:inline-flex;flex-direction:column;align-items:center;gap:1px;padding:9px 20px;
+  border:1.5px solid #E7DCC3;border-radius:13px;background:var(--card);text-decoration:none;
+  box-shadow:0 3px 12px rgba(140,110,40,.10);white-space:nowrap}
+.call-box:hover{border-color:var(--accent)}
+.cb1{font-size:12px;color:var(--sub);font-weight:700;font-family:var(--sans)}
+.cb2{font-size:21px;color:var(--accent);font-weight:800;font-family:var(--sans);letter-spacing:.02em}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media(max-width:640px){
+  .head-row{flex-direction:column-reverse;align-items:stretch;gap:10px}
+  .call-box{width:100%;padding:12px}
+  .summary{grid-template-columns:1fr}
+  table{min-width:460px}
+  th,td{font-size:12.5px;padding:8px 6px}
+  .chip{font-size:11.5px;padding:5px 8px}
+}
+@media(max-width:420px){h1{font-size:26px}.card .big{font-size:20px}.seg button{padding:7px 12px}
+  .cb2{font-size:19px}.meta{row-gap:6px}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div class="eyebrow">모닝부동산 · 수원 장안구 · 국토교통부 실거래가</div>
-    <h1>샘내마을 실거래가</h1>
+    <div class="head-row">
+      <h1>샘내마을 실거래가</h1>
+      <a class="call-box" href="tel:0312712771" aria-label="모닝부동산 전화상담 031-271-2771">
+        <span class="cb1">모닝부동산 전화상담</span>
+        <span class="cb2">031-271-2771</span>
+      </a>
+    </div>
     <div class="meta"><a class="naver-link" id="naverLink" target="_blank" rel="noopener">현재 매물 보기 · 네이버 ↗</a><a class="kb-link" id="kbLink" target="_blank" rel="noopener">KB시세 ↗</a><span id="updated"></span><span class="badge" id="sampleBadge">샘플 데이터 — API 연동 전 미리보기</span></div>
   </header>
 
@@ -128,10 +152,10 @@ footer p{margin-top:4px}
   </section>
 
   <section class="card" style="padding:6px 8px">
-    <table>
+    <div class="tbl-wrap"><table>
       <thead id="thead"></thead>
       <tbody id="rows"></tbody>
-    </table>
+    </table></div>
     <div class="empty" id="empty" style="display:none">선택한 조건의 거래가 없습니다.</div>
     <button class="more" id="moreBtn" style="display:none"></button>
   </section>
